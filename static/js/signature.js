@@ -2,13 +2,16 @@
 const signatureCanvas = document.getElementById('signature-pad');
 const signatureCtx = signatureCanvas.getContext('2d');
 
+// Detecta si el dispositivo tiene soporte táctil
+const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
 // Ajustar las dimensiones del canvas de la firma según el tamaño en pantalla
 function resizeCanvas() {
     signatureCanvas.width = signatureCanvas.offsetWidth; // Usa el ancho calculado por CSS
     signatureCanvas.height = signatureCanvas.offsetWidth * (2 / 5); 
 }
 
-// Llamar a la función para inicializar el tamaño y al redimensionar la ventana
+// Inicializar el tamaño del canvas
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
@@ -16,28 +19,61 @@ window.addEventListener('resize', resizeCanvas);
 signatureCtx.fillStyle = "rgba(255, 255, 255, 0)";
 signatureCtx.fillRect(0, 0, signatureCanvas.width, signatureCanvas.height);
 
+// Variables para el estado del dibujo
 let drawing = false;
 
-// Manejo de eventos para dibujar en el canvas de la firma
-signatureCanvas.addEventListener('mousedown', (event) => {
+// Función para obtener las coordenadas correctas (táctil o ratón)
+function getEventPosition(event) {
+    if (event.touches) {
+        const touch = event.touches[0];
+        const rect = signatureCanvas.getBoundingClientRect();
+        return {
+            x: touch.clientX - rect.left,
+            y: touch.clientY - rect.top
+        };
+    } else {
+        return {
+            x: event.offsetX,
+            y: event.offsetY
+        };
+    }
+}
+
+// Eventos comunes para dibujar en el canvas
+function startDrawing(event) {
     drawing = true;
-    signatureCtx.beginPath(); // Reinicia el trazo
-    signatureCtx.moveTo(event.offsetX, event.offsetY); // Fija el punto inicial del nuevo trazo
-});
+    const position = getEventPosition(event);
+    signatureCtx.beginPath();
+    signatureCtx.moveTo(position.x, position.y);
+    event.preventDefault(); // Previene el scroll en dispositivos móviles
+}
 
-signatureCanvas.addEventListener('mouseup', () => {
+function stopDrawing() {
     drawing = false;
-    signatureCtx.beginPath(); // Reinicia el trazo después de soltar el botón
-});
+    signatureCtx.beginPath(); // Reinicia el trazo
+}
 
-signatureCanvas.addEventListener('mousemove', (event) => {
+function draw(event) {
     if (!drawing) return;
+    const position = getEventPosition(event);
     signatureCtx.lineWidth = 2;
     signatureCtx.lineCap = 'round';
     signatureCtx.strokeStyle = 'black';
-    signatureCtx.lineTo(event.offsetX, event.offsetY);
+    signatureCtx.lineTo(position.x, position.y);
     signatureCtx.stroke();
-});
+    event.preventDefault(); // Previene el scroll en dispositivos móviles
+}
+
+// Añadir eventos según el dispositivo
+if (isTouchDevice) {
+    signatureCanvas.addEventListener('touchstart', startDrawing);
+    signatureCanvas.addEventListener('touchend', stopDrawing);
+    signatureCanvas.addEventListener('touchmove', draw);
+} else {
+    signatureCanvas.addEventListener('mousedown', startDrawing);
+    signatureCanvas.addEventListener('mouseup', stopDrawing);
+    signatureCanvas.addEventListener('mousemove', draw);
+}
 
 // Función para limpiar el canvas de la firma
 function clearCanvas() {
@@ -72,24 +108,24 @@ function saveSignature() {
 
 // Canvas para la previsualización del PDF
 const pdfCanvas = document.getElementById('pdf-canvas');
-const pdfCtx = pdfCanvas.getContext('2d');
+if (pdfCanvas) {
+    const pdfCtx = pdfCanvas.getContext('2d');
+    const url = pdfCanvas.getAttribute('data-url'); // Recupera la URL del atributo data-url
 
-// Recupera la URL del atributo data-url
-const url = pdfCanvas.getAttribute('data-url');
+    // Usa PDF.js para cargar y renderizar el PDF
+    pdfjsLib.getDocument(url).promise.then(function(pdf) {
+        pdf.getPage(1).then(function(page) {
+            const viewport = page.getViewport({ scale: 1 });
+            pdfCanvas.height = viewport.height;
+            pdfCanvas.width = viewport.width;
 
-// Usa PDF.js para cargar y renderizar el PDF
-pdfjsLib.getDocument(url).promise.then(function(pdf) {
-    pdf.getPage(1).then(function(page) {
-        const viewport = page.getViewport({ scale: 1 });
-        pdfCanvas.height = viewport.height;
-        pdfCanvas.width = viewport.width;
-
-        const renderContext = {
-            canvasContext: pdfCtx,
-            viewport: viewport
-        };
-        page.render(renderContext);
+            const renderContext = {
+                canvasContext: pdfCtx,
+                viewport: viewport
+            };
+            page.render(renderContext);
+        });
+    }).catch(function(error) {
+        console.error("Error al cargar el PDF:", error);
     });
-}).catch(function(error) {
-    console.error("Error al cargar el PDF:", error);
-});
+}
