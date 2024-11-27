@@ -74,7 +74,7 @@ def add_signature_to_pdf(pdf_path, signature_image_stream, signed_pdf_path):
     c = canvas.Canvas(packet, pagesize=letter)
 
     # Dibuja la firma en la posición deseada
-    c.drawImage(temp_signature_path, 170, 150, width=150, height=30)  # Ajusta posición/tamaño
+    c.drawImage(temp_signature_path, 200, 350, width=140, height=40)  # Ajusta posición/tamaño
     c.save()
 
     # Volver al inicio del archivo en memoria
