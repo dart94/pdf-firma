@@ -154,9 +154,9 @@ def sign_document(request_id):
     
     # Verificar si ya está firmado o expirado
     if signature_request.is_signed:
-        return "Este documento ya ha sido firmado"
+        return render_template('signed.html')
     if signature_request.is_expired():
-        return "Este enlace de firma ha expirado"
+        return render_template('expired.html')
     
     if request.method == 'POST':
         signature_data = request.form["signature"]

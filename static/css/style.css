@@ -222,3 +222,30 @@ form button:hover {
     background-color: var(--gris-claro);
     color: var(--negro);
 }
+
+/* Estilos de pagina link */
+
+.success-container {
+    background-color: #f0f8f0;
+    border: 1px solid #4CAF50;
+    border-radius: 4px;
+    padding: 2rem;
+    margin-top: 4rem;
+}
+.url-container {
+    background-color: #f5f5f5;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+.copy-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.copy-button:hover {
+    background-color: #45a049;
+}

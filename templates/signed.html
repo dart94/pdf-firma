@@ -1,10 +1,10 @@
-<!-- templates/upload_success.html -->
+<!-- templates/signed.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documento Subido Exitosamente</title>
+    <title>Documento Firmado Exitosamente</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
@@ -21,22 +21,10 @@
         </nav>
     </header>
     <div class="success-container">
-        <h2>¡Documento subido exitosamente!</h2>
-        <p>Comparte el siguiente enlace con la persona que debe firmar el documento:</p>
-        
-        <div class="url-container">
-            <p id="signing-url">{{ signing_url }}</p>
-        </div>
-        
-        <button class="copy-button" onclick="copyUrl()">Copiar enlace</button>
+        <h2>¡Documento firmado exitosamente!</h2>
     </div>
-
     <!-- Pie de página -->
     <footer class="footer">
         <p>&copy;Todos los derechos reservados.</p>
     </footer>
-
-    
-<script src="{{ url_for('static', filename='js/signature.js') }}"></script>    
 </body>
-</html>

@@ -129,3 +129,10 @@ if (pdfCanvas) {
         console.error("Error al cargar el PDF:", error);
     });
 }
+
+function copyUrl() {
+    const url = document.getElementById('signing-url').textContent;
+    navigator.clipboard.writeText(url).then(() => {
+        alert('¡Enlace copiado al portapapeles!');
+    });
+}
