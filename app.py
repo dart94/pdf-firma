@@ -10,6 +10,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from base64 import b64decode
 import pypdf
+from datetime import timezone
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -21,8 +22,11 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(SIGNED_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["SIGNED_FOLDER"] = SIGNED_FOLDER
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///signatures.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+    "DATABASE_URL", "postgresql://postgres:POjljzcMvxYzwJNaYATCktXBPUNZpQFA@postgres.railway.internal:5432/railway"
+)
 app.config["SECRET_KEY"] = os.urandom(24)
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 port = int(os.environ.get('PORT', 5000))
 
 db = SQLAlchemy(app)
@@ -30,8 +34,8 @@ db = SQLAlchemy(app)
 class SignatureRequest(db.Model):
     id = db.Column(db.String(36), primary_key=True)
     filename = db.Column(db.String(255), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    expires_at = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc))
+    expires_at = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc) + timedelta(days=7))
     is_signed = db.Column(db.Boolean, default=False)
     
     def is_expired(self):
