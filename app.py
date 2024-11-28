@@ -184,7 +184,7 @@ def sign_document(request_id):
         signature_request.signed_pdf = signed_pdf_binary  # Guardar el PDF en la columna de la base de datos
         db.session.commit()
         
-        return "El PDF fue firmado y guardado correctamente en la base de datos."
+        return render_template ('signed.html')
     
     return render_template("sign.html", filename=signature_request.filename)
 
@@ -195,12 +195,21 @@ def uploaded_file(filename):
 
 @app.route('/status/<request_id>')
 def signature_status(request_id):
+    
     signature_request = SignatureRequest.query.get_or_404(request_id)
     return {
         'is_signed': signature_request.is_signed,
         'is_expired': signature_request.is_expired(),
         'expires_at': signature_request.expires_at.isoformat()
     }
+
+@app.route('/list-signed-documents')
+def list_signed_documents():
+    # Obtener todas las solicitudes que han sido firmadas
+    signed_requests = SignatureRequest.query.filter_by(is_signed=True).all()
+
+    # Renderizar una plantilla con la lista de documentos
+    return render_template('list_signed_documents.html', signed_requests=signed_requests)
 
 
 with app.app_context():
