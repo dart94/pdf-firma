@@ -1,28 +1,27 @@
-import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+import os
 
 db = SQLAlchemy()
 migrate = Migrate()
 
 def create_app():
-    # Crear la aplicación Flask
     app = Flask(__name__)
-    
-    # Cargar configuración desde config.py
-    app.config.from_object('config.Config')
-    
-    # Crear carpetas para subida de archivos si no existen
-    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
-    os.makedirs(app.config["SIGNED_FOLDER"], exist_ok=True)
-    
-    # Inicializar extensiones
+
+    # Configuración
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+        "DATABASE_URL", "sqlite:///default.db"  # Cambia esto si no estás usando SQLite
+    )
+    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "default_secret_key")
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+    # Inicialización de extensiones
     db.init_app(app)
     migrate.init_app(app, db)
-    
-    # Registrar rutas
+
+    # Registro de blueprints
     from app.routes import main_blueprint
     app.register_blueprint(main_blueprint)
-    
+
     return app

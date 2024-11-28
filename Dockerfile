@@ -1,6 +1,5 @@
 FROM python:3.9-slim
 
-# Establecer directorio de trabajo
 WORKDIR /app
 
 # Instalar dependencias del sistema
@@ -15,5 +14,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar el código fuente
 COPY . .
 
-# Comando para ejecutar migraciones y lanzar el servidor
+# Ejecutar migraciones y lanzar Gunicorn
 CMD ["sh", "-c", "flask db upgrade || echo 'Migraciones fallaron, continuando...' && gunicorn app:app --bind 0.0.0.0:5000"]
