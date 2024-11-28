@@ -73,8 +73,7 @@ def create_signature_image(signature_data):
     image_stream.seek(0)  # Volver al inicio del flujo
     return image_stream
 
-def add_signature_to_pdf(pdf_path, signature_image_stream, signed_pdf_path):
-    # Guardar la firma en un archivo temporal
+def add_signature_to_pdf(pdf_path, signature_image_stream):
     with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as temp_signature_file:
         temp_signature_file.write(signature_image_stream.getvalue())
         temp_signature_path = temp_signature_file.name
@@ -82,48 +81,49 @@ def add_signature_to_pdf(pdf_path, signature_image_stream, signed_pdf_path):
     # Crear un archivo temporal con la firma como PDF
     packet = BytesIO()
     c = canvas.Canvas(packet, pagesize=letter)
-
-    # Dibuja la firma en la posición deseada
     c.drawImage(temp_signature_path, 170, 150, width=150, height=30)  # Ajusta posición/tamaño
     c.save()
-
-    # Volver al inicio del archivo en memoria
     packet.seek(0)
 
-    # Leer el PDF original y el PDF con la firma
     pdf_reader = pypdf.PdfReader(pdf_path)
     signature_pdf = pypdf.PdfReader(packet)
     pdf_writer = pypdf.PdfWriter()
 
-    # Crear una página combinada con la firma
+    # Crear una nueva página combinada con la firma
     original_page = pdf_reader.pages[0]
     signature_page = signature_pdf.pages[0]
-
-    # Crear una nueva página en blanco
     combined_page = pypdf.PageObject.create_blank_page(width=letter[0], height=letter[1])
-
-    # Agregar contenido original
     combined_page.merge_page(original_page)
-
-    # Agregar la firma
     combined_page.merge_page(signature_page)
-
-    # Agregar la página combinada al escritor
     pdf_writer.add_page(combined_page)
 
-    # Agregar las demás páginas originales (si hay)
+    # Agregar las páginas restantes (si las hay)
     for page in pdf_reader.pages[1:]:
         pdf_writer.add_page(page)
 
-    # Guardar el nuevo PDF firmado
-    with open(signed_pdf_path, "wb") as output_pdf:
-        pdf_writer.write(output_pdf)
+    # Guardar el PDF firmado en memoria
+    output_stream = BytesIO()
+    pdf_writer.write(output_stream)
+    output_stream.seek(0)
 
-    # Limpiar el archivo temporal de la firma
-    try:
-        os.unlink(temp_signature_path)
-    except:
-        pass
+    os.unlink(temp_signature_path)  # Eliminar archivo temporal
+    return output_stream.getvalue()  # Retornar los datos binarios del PDF
+
+@app.route('/download/<request_id>')
+def download_signed_pdf(request_id):
+    signature_request = SignatureRequest.query.get_or_404(request_id)
+
+    # Verificar si el PDF está firmado
+    if not signature_request.is_signed or not signature_request.signed_pdf:
+        return "El PDF no está firmado o no existe.", 404
+
+    # Descargar el PDF desde la base de datos
+    return send_file(
+        BytesIO(signature_request.signed_pdf),  # Archivo en memoria
+        download_name=f"signed_{signature_request.filename}",
+        as_attachment=True,
+        mimetype="application/pdf"
+    )
 
 @app.route('/')
 def index():
@@ -164,9 +164,9 @@ def sign_document(request_id):
     
     # Verificar si ya está firmado o expirado
     if signature_request.is_signed:
-        return render_template('signed.html')
+        return render_template('signed.html')  # Si ya está firmado, notificar
     if signature_request.is_expired():
-        return render_template('expired.html')
+        return render_template('expired.html')  # Si el enlace expiró, notificar
     
     if request.method == 'POST':
         signature_data = request.form["signature"]
@@ -175,18 +175,18 @@ def sign_document(request_id):
         # Crear imagen de la firma
         signature_image = create_signature_image(signature_data)
         
-        # Insertar la firma en el PDF
-        signed_filename = f"signed_{signature_request.filename}"
-        signed_pdf_path = os.path.join(app.config["SIGNED_FOLDER"], signed_filename)
-        add_signature_to_pdf(pdf_path, signature_image, signed_pdf_path)
+        # Insertar la firma en el PDF y guardar el archivo en memoria
+        signed_pdf_binary = add_signature_to_pdf(pdf_path, signature_image)
         
-        # Marcar como firmado
+        # Actualizar la base de datos con el PDF firmado
         signature_request.is_signed = True
+        signature_request.signed_pdf = signed_pdf_binary  # Guardar el PDF en la columna de la base de datos
         db.session.commit()
         
-        return send_from_directory(app.config["SIGNED_FOLDER"], signed_filename, as_attachment=True)
+        return "El PDF fue firmado y guardado correctamente en la base de datos."
     
     return render_template("sign.html", filename=signature_request.filename)
+
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
