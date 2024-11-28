@@ -16,3 +16,4 @@ COPY . .
 
 # Ejecutar migraciones y lanzar Gunicorn
 CMD ["sh", "-c", "flask db upgrade || echo 'Migraciones fallaron, continuando...' && gunicorn app:app --bind 0.0.0.0:5000"]
+
