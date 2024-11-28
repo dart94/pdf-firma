@@ -222,6 +222,11 @@ form button:hover {
     }
 }
 
+/* Estilo para el contenedor */
+.container{
+    margin: 2rem 2rem;
+}
+
 
 /* Canvas */
 .canvas {
@@ -319,7 +324,7 @@ form button:hover {
 .styled-table {
     width: 100%;
     max-width: 1200px;
-    margin: 0 auto;
+    margin: 2rem auto;
     border-collapse: separate;
     border-spacing: 0;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
