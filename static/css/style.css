@@ -249,3 +249,52 @@ form button:hover {
 .copy-button:hover {
     background-color: #45a049;
 }
+
+/* Estilo para la tabla */
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 25px 0;
+    font-size: 18px;
+    text-align: left;
+    background-color: #fff;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Encabezado de la tabla */
+.styled-table thead tr {
+    background-color: #009879;
+    color: #ffffff;
+    text-align: left;
+    font-weight: bold;
+}
+
+/* Filas de la tabla */
+.styled-table tbody tr {
+    border-bottom: 1px solid #dddddd;
+}
+
+/* Alternar colores en filas */
+.styled-table tbody tr:nth-of-type(even) {
+    background-color: #f3f3f3;
+}
+
+/* Color al pasar el mouse */
+.styled-table tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Estilo para el botón de descarga */
+.download-btn {
+    display: inline-block;
+    padding: 8px 12px;
+    background-color: #009879;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.download-btn:hover {
+    background-color: #007f63;
+}

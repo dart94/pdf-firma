@@ -21,16 +21,26 @@
     </header>
 
     <h1>Lista de Documentos Firmados</h1>
-    <ul>
-        {% for request in signed_requests %}
-        <li>
-            <strong>{{ request.filename }}</strong> - 
-            <a href="{{ url_for('download_signed_pdf', request_id=request.id) }}">
-                Descargar
-            </a>
-        </li>
-        {% endfor %}
-    </ul>
+    <table class="styled-table">
+        <thead>
+            <tr>
+                <th>Nombre del Archivo</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in signed_requests %}
+            <tr>
+                <td>{{ request.filename }}</td>
+                <td>
+                    <a href="{{ url_for('download_signed_pdf', request_id=request.id) }}" class="download-btn">
+                        Descargar
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
     <!-- Pie de página -->
     <footer class="footer">
