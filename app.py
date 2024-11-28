@@ -203,13 +203,13 @@ def signature_status(request_id):
         'expires_at': signature_request.expires_at.isoformat()
     }
 
-@app.route('/list-signed-documents')
+@app.route('/firmados')
 def list_signed_documents():
     # Obtener todas las solicitudes que han sido firmadas
     signed_requests = SignatureRequest.query.filter_by(is_signed=True).all()
 
     # Renderizar una plantilla con la lista de documentos
-    return render_template('list_signed_documents.html', signed_requests=signed_requests)
+    return render_template('firmados.html', signed_requests=signed_requests)
 
 
 with app.app_context():
