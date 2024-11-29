@@ -14,6 +14,8 @@ import pypdf
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
+from flask import flash
+
 
 # Inicialización de la aplicación
 app = Flask(__name__)
@@ -195,6 +197,36 @@ def sign_document(request_id):
         return render_template('signed.html')
 
     return render_template("sign.html", filename=signature_request.filename)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
+
+        # Verificar si las contraseñas coinciden
+        if password != confirm_password:
+            flash("Las contraseñas no coinciden. Intenta de nuevo.", "danger")
+            return render_template('register.html')
+
+        # Verificar si el nombre de usuario ya existe
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            flash("El nombre de usuario ya existe. Intenta con otro.", "warning")
+            return render_template('register.html')
+
+        # Hashear la contraseña y crear el usuario
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        new_user = User(username=username, password=hashed_password)
+
+        db.session.add(new_user)
+        db.session.commit()
+
+        flash("Cuenta creada exitosamente. Ahora puedes iniciar sesión.", "success")
+        return redirect(url_for('login'))
+
+    return render_template('register.html')
 
 # Inicialización de la base de datos
 with app.app_context():
