@@ -1,7 +1,8 @@
 import os
 import uuid
-from datetime import datetime, timedelta
-from flask import Flask, render_template, request, redirect, url_for, send_file, send_from_directory, abort
+from datetime import datetime, timedelta, timezone
+from flask import Flask, render_template, request, redirect, url_for, send_file, send_from_directory
+from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin
 from werkzeug.utils import secure_filename
 from PIL import Image
 from io import BytesIO
@@ -10,13 +11,11 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from base64 import b64decode
 import pypdf
-from datetime import timezone
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_bcrypt import Bcrypt
 
-
-
-
+# Inicialización de la aplicación
 app = Flask(__name__)
 
 # Configuración
@@ -26,63 +25,68 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(SIGNED_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["SIGNED_FOLDER"] = SIGNED_FOLDER
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-    "DATABASE_URL", "postgresql://postgres:POjljzcMvxYzwJNaYATCktXBPUNZpQFA@postgres.railway.internal:5432/railway"
-)
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/db")
 app.config["SECRET_KEY"] = os.urandom(24)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 port = int(os.environ.get('PORT', 5000))
 
+# Inicialización de extensiones
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+bcrypt = Bcrypt(app)
 
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
+# Modelo de la tabla de usuarios
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+
+# Modelo de la tabla de firmas
 class SignatureRequest(db.Model):
     id = db.Column(db.String(36), primary_key=True)
     filename = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc))
-    expires_at = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc) + timedelta(days=7))
+    expires_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc) + timedelta(days=7))
     is_signed = db.Column(db.Boolean, default=False)
     signed_pdf = db.Column(db.LargeBinary, nullable=True)
     
     def is_expired(self):
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(timezone.utc) > self.expires_at
 
+# Función para crear la imagen de la firma
 def create_signature_image(signature_data):
-    # Decodifica los datos base64 de la firma
-    signature_bytes = b64decode(signature_data.split(",")[1])
-    signature_image = Image.open(BytesIO(signature_bytes))
+    try:
+        signature_bytes = b64decode(signature_data.split(",")[1])
+        signature_image = Image.open(BytesIO(signature_bytes))
+        signature_image = signature_image.convert("RGBA")
+        data = signature_image.getdata()
 
-    # Asegurar que la imagen tenga un canal alpha (transparencia)
-    signature_image = signature_image.convert("RGBA")
-    data = signature_image.getdata()
+        new_data = [
+            (255, 255, 255, 0) if item[:3] == (255, 255, 255) else item
+            for item in data
+        ]
+        signature_image.putdata(new_data)
 
-    # Convertir cualquier fondo blanco en transparente
-    new_data = []
-    for item in data:
-        # Si es blanco (255, 255, 255), hacer transparente
-        if item[:3] == (255, 255, 255):
-            new_data.append((255, 255, 255, 0))  # Transparente
-        else:
-            new_data.append(item)
+        image_stream = BytesIO()
+        signature_image.save(image_stream, format="PNG")
+        image_stream.seek(0)
+        return image_stream
+    except Exception as e:
+        raise ValueError("Error al procesar la imagen de la firma.") from e
 
-    signature_image.putdata(new_data)
-
-    # Guardar la imagen como un archivo en memoria
-    image_stream = BytesIO()
-    signature_image.save(image_stream, format="PNG")
-    image_stream.seek(0)  # Volver al inicio del flujo
-    return image_stream
-
+# Función para agregar la firma al PDF
 def add_signature_to_pdf(pdf_path, signature_image_stream):
     with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as temp_signature_file:
         temp_signature_file.write(signature_image_stream.getvalue())
         temp_signature_path = temp_signature_file.name
 
-    # Crear un archivo temporal con la firma como PDF
     packet = BytesIO()
     c = canvas.Canvas(packet, pagesize=letter)
-    c.drawImage(temp_signature_path, 170, 150, width=150, height=30)  # Ajusta posición/tamaño
+    c.drawImage(temp_signature_path, 170, 150, width=150, height=30)
     c.save()
     packet.seek(0)
 
@@ -90,7 +94,6 @@ def add_signature_to_pdf(pdf_path, signature_image_stream):
     signature_pdf = pypdf.PdfReader(packet)
     pdf_writer = pypdf.PdfWriter()
 
-    # Crear una nueva página combinada con la firma
     original_page = pdf_reader.pages[0]
     signature_page = signature_pdf.pages[0]
     combined_page = pypdf.PageObject.create_blank_page(width=letter[0], height=letter[1])
@@ -98,122 +101,105 @@ def add_signature_to_pdf(pdf_path, signature_image_stream):
     combined_page.merge_page(signature_page)
     pdf_writer.add_page(combined_page)
 
-    # Agregar las páginas restantes (si las hay)
     for page in pdf_reader.pages[1:]:
         pdf_writer.add_page(page)
 
-    # Guardar el PDF firmado en memoria
     output_stream = BytesIO()
     pdf_writer.write(output_stream)
     output_stream.seek(0)
 
-    os.unlink(temp_signature_path)  # Eliminar archivo temporal
-    return output_stream.getvalue()  # Retornar los datos binarios del PDF
+    os.unlink(temp_signature_path)
+    return output_stream.getvalue()
 
-@app.route('/download/<request_id>')
-def download_signed_pdf(request_id):
-    signature_request = SignatureRequest.query.get_or_404(request_id)
+# Rutas de la aplicación
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
-    # Verificar si el PDF está firmado
-    if not signature_request.is_signed or not signature_request.signed_pdf:
-        return "El PDF no está firmado o no existe.", 404
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username).first()
 
-    # Descargar el PDF desde la base de datos
-    return send_file(
-        BytesIO(signature_request.signed_pdf),  # Archivo en memoria
-        download_name=f"signed_{signature_request.filename}",
-        as_attachment=True,
-        mimetype="application/pdf"
-    )
+        if user and bcrypt.check_password_hash(user.password, password):
+            login_user(user)
+            return redirect(url_for('index'))
+        else:
+            return "Credenciales inválidas", 401
+
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
 
 @app.route('/')
+@login_required
 def index():
     return render_template('index.html')
 
 @app.route('/upload', methods=['POST'])
+@login_required
 def upload_file():
     if "file" not in request.files:
-        return "No se subió ningún archivo"
+        return "No se subió ningún archivo", 400
     
     file = request.files["file"]
     if file.filename == "":
-        return "No se seleccionó ningún archivo"
+        return "No se seleccionó ningún archivo", 400
     
     filename = secure_filename(file.filename)
     filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
     file.save(filepath)
     
-    # Crear una nueva solicitud de firma
     request_id = str(uuid.uuid4())
     signature_request = SignatureRequest(
         id=request_id,
         filename=filename,
-        expires_at=datetime.utcnow() + timedelta(days=7)  # El enlace expira en 7 días
+        expires_at=datetime.now(timezone.utc) + timedelta(days=7)
     )
     
     db.session.add(signature_request)
     db.session.commit()
     
-    # Generar URL para compartir
     signing_url = url_for('sign_document', request_id=request_id, _external=True)
     return render_template('upload_success.html', signing_url=signing_url)
 
 @app.route('/sign/<request_id>', methods=['GET', 'POST'])
 def sign_document(request_id):
-    # Buscar la solicitud de firma
     signature_request = SignatureRequest.query.get_or_404(request_id)
-    
-    # Verificar si ya está firmado o expirado
+
     if signature_request.is_signed:
-        return render_template('signed.html')  # Si ya está firmado, notificar
+        return render_template('signed.html')
     if signature_request.is_expired():
-        return render_template('expired.html')  # Si el enlace expiró, notificar
+        return render_template('expired.html')
     
     if request.method == 'POST':
         signature_data = request.form["signature"]
         pdf_path = os.path.join(app.config["UPLOAD_FOLDER"], signature_request.filename)
         
-        # Crear imagen de la firma
-        signature_image = create_signature_image(signature_data)
-        
-        # Insertar la firma en el PDF y guardar el archivo en memoria
-        signed_pdf_binary = add_signature_to_pdf(pdf_path, signature_image)
-        
-        # Actualizar la base de datos con el PDF firmado
+        try:
+            signature_image = create_signature_image(signature_data)
+            signed_pdf_binary = add_signature_to_pdf(pdf_path, signature_image)
+        except ValueError as e:
+            return str(e), 400
+
         signature_request.is_signed = True
-        signature_request.signed_pdf = signed_pdf_binary  # Guardar el PDF en la columna de la base de datos
+        signature_request.signed_pdf = signed_pdf_binary
         db.session.commit()
         
-        return render_template ('signed.html')
-    
+        return render_template('signed.html')
+
     return render_template("sign.html", filename=signature_request.filename)
 
-
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
-
-@app.route('/status/<request_id>')
-def signature_status(request_id):
-    
-    signature_request = SignatureRequest.query.get_or_404(request_id)
-    return {
-        'is_signed': signature_request.is_signed,
-        'is_expired': signature_request.is_expired(),
-        'expires_at': signature_request.expires_at.isoformat()
-    }
-
-@app.route('/firmados')
-def list_signed_documents():
-    # Obtener todas las solicitudes que han sido firmadas
-    signed_requests = SignatureRequest.query.filter_by(is_signed=True).all()
-
-    # Renderizar una plantilla con la lista de documentos
-    return render_template('firmados.html', signed_requests=signed_requests)
-
-
+# Inicialización de la base de datos
 with app.app_context():
     db.create_all()
 
+# Ejecución del servidor
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=port)
