@@ -247,6 +247,23 @@ def register():
 
     return render_template('register.html')
 
+@app.route('/download/<request_id>')
+@login_required
+def download_signed_pdf(request_id):
+    signature_request = SignatureRequest.query.get_or_404(request_id)
+
+    # Verificar si el PDF está firmado
+    if not signature_request.is_signed or not signature_request.signed_pdf:
+        return "El PDF no está firmado o no existe.", 404
+
+    # Descargar el PDF desde la base de datos
+    return send_file(
+        BytesIO(signature_request.signed_pdf),
+        download_name=f"signed_{signature_request.filename}",
+        as_attachment=True,
+        mimetype="application/pdf"
+    )
+
 # Inicialización de la base de datos
 with app.app_context():
     db.create_all()
