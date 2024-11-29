@@ -173,23 +173,33 @@ def upload_file():
 
 @app.route('/sign/<request_id>', methods=['GET', 'POST'])
 def sign_document(request_id):
+    # Buscar la solicitud de firma
     signature_request = SignatureRequest.query.get_or_404(request_id)
 
+    # Verificar si la solicitud ha expirado
+    if signature_request.expires_at.tzinfo is None:
+        expires_at_aware = signature_request.expires_at.replace(tzinfo=timezone.utc)
+    else:
+        expires_at_aware = signature_request.expires_at
+    
+    if datetime.now(timezone.utc) > expires_at_aware:
+        return render_template('expired.html')  # Si el enlace expiró, notificar
+    
+    # Si ya está firmado, notificar
     if signature_request.is_signed:
         return render_template('signed.html')
-    if signature_request.is_expired():
-        return render_template('expired.html')
-    
+
     if request.method == 'POST':
         signature_data = request.form["signature"]
         pdf_path = os.path.join(app.config["UPLOAD_FOLDER"], signature_request.filename)
         
-        try:
-            signature_image = create_signature_image(signature_data)
-            signed_pdf_binary = add_signature_to_pdf(pdf_path, signature_image)
-        except ValueError as e:
-            return str(e), 400
-
+        # Crear imagen de la firma
+        signature_image = create_signature_image(signature_data)
+        
+        # Insertar la firma en el PDF y guardar el archivo en memoria
+        signed_pdf_binary = add_signature_to_pdf(pdf_path, signature_image)
+        
+        # Actualizar la base de datos con el PDF firmado
         signature_request.is_signed = True
         signature_request.signed_pdf = signed_pdf_binary
         db.session.commit()
