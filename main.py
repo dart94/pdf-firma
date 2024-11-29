@@ -144,6 +144,15 @@ def logout():
 def index():
     return render_template('index.html')
 
+@app.route('/firmados')
+@login_required
+def list_signed_documents():
+    # Obtener todas las solicitudes que han sido firmadas
+    signed_requests = SignatureRequest.query.filter_by(is_signed=True).all()
+
+    # Renderizar una plantilla con la lista de documentos
+    return render_template('firmados.html', signed_requests=signed_requests)
+
 @app.route('/upload', methods=['POST'])
 @login_required
 def upload_file():
