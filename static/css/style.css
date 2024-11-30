@@ -122,17 +122,28 @@ form input[type="file"] {
     max-width: 300px;
 }
 
-input{
-	height: 2rem;
-	background: #e0dede;
-	justify-content: center;
-	display: flex;
-	padding: 12px;
-	border: none;
-	outline: none;
-	border-radius: 5px;
+/* Estilo de los inputs */
+input {
+    width: 100%;
+    height: 2.5rem;
+    background: #e0dede;
+    padding: 12px;
+    border: none;
+    outline: none;
+    border-radius: 5px;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    transition: background 0.3s, border-color 0.3s;
 }
 
+/* Efecto en el input al enfocar */
+input:focus {
+    background: #ffffff;
+    border: 2px solid #ff4c4c; /* Cambiar el color del borde al enfocar */
+    outline: none;
+}
+
+/* Estilo para el botón */
 form button {
     background-color: var(--rojo-nissan);
     color: var(--blanco);
@@ -141,12 +152,33 @@ form button {
     border-radius: 4px;
     font-weight: bold;
     cursor: pointer;
-    transition: var(--transicion);
+    transition: background-color 0.3s, transform 0.2s;
     margin-top: 1rem;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
+/* Efecto hover para el botón */
 form button:hover {
-    background-color: var(--gris-oscuro);
+    background-color: #d93f3f; /* Color más oscuro al pasar el cursor */
+    transform: translateY(-2px); /* Elevar el botón un poco */
+}
+
+/* Efecto active para el botón */
+form button:active {
+    transform: scale(0.98); /* Reducir un poco el tamaño del botón */
+}
+
+/* Opcional: Mejora de mensajes de error o alerta */
+.messages {
+    background-color: #ffdddd;
+    color: #d8000c;
+    border: 1px solid #d8000c;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 1rem;
 }
 
 /* Footer */
