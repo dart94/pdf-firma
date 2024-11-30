@@ -25,10 +25,13 @@
 
         <div class="app">
             <h1>Sube tu PDF</h1>
-            <form action="/upload" method="POST" enctype="multipart/form-data">
-                <input type="file" name="file" accept="application/pdf" required>
-                <button type="submit">Subir</button>
-            </form>
+            <div class="file-upload">
+                <label for="file" class="file-upload-label">
+                    <i class="fas fa-upload"></i>
+                    <span class="file-upload-text">Seleccionar Archivo</span>
+                </label>
+                <input type="file" id="file" name="file">
+            </div>
         </div>
     </main>
 

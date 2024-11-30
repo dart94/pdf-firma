@@ -112,15 +112,55 @@ html,body {
     text-align: center;
 }
 
-form input[type="file"] {
-    display: block;
-    margin: 1rem auto;
-    padding: 0.5rem;
-    border: 1px solid var(--gris-oscuro);
-    border-radius: 4px;
+/* Estilo mejorado para input[type="file"] */
+.file-upload {
+    position: relative;
     width: 80%;
     max-width: 300px;
+    margin: 1rem auto;
 }
+
+.file-upload input[type="file"] {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    opacity: 0; /* Hacemos el input invisible */
+    cursor: pointer;
+    z-index: 2;
+}
+
+.file-upload-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0.7rem 1.5rem;
+    background-color: var(--rojo-nissan);
+    color: var(--blanco);
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.file-upload-label:hover {
+    background-color: #d93f3f; /* Color más oscuro al pasar el cursor */
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+.file-upload-label:active {
+    transform: scale(0.98); /* Reducir un poco el tamaño al hacer clic */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.file-upload-text {
+    margin-left: 0.5rem;
+    font-size: 1rem;
+}
+
 
 /* Estilo de los inputs */
 input {
@@ -228,9 +268,6 @@ form button:active {
 
 
 
-    form input[type="file"] {
-        width: 90%;
-    }
 
     .styled-table {
         border-radius: 0;

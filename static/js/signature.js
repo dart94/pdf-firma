@@ -136,3 +136,12 @@ function copyUrl() {
         alert('¡Enlace copiado al portapapeles!');
     });
 }
+
+document.getElementById('file').addEventListener('change', function() {
+    const label = document.querySelector('.file-upload-text');
+    if (this.files && this.files.length > 0) {
+        label.textContent = this.files[0].name;
+    } else {
+        label.textContent = "Seleccionar Archivo";
+    }
+});
