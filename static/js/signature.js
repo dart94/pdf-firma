@@ -137,3 +137,10 @@ function copyUrl() {
     });
 }
 
+document.querySelector('form').addEventListener('submit', function(event) {
+    const fileInput = document.getElementById('file');
+    if (!fileInput.value) {
+        alert('Por favor, selecciona un archivo antes de subirlo.');
+        event.preventDefault();
+    }
+});

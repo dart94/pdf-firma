@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,19 +25,23 @@
 
         <div class="app">
             <h1>Sube tu PDF</h1>
-            <div class="file-upload">
-                <label for="file" class="file-upload-label">
-                    <i class="fas fa-upload"></i>
-                    <span class="file-upload-text">Seleccionar Archivo</span>
-                </label>
-                <input type="file" id="file" name="file">
-            </div>
-            <button type="submit">Subir</button>
+            <form action="{{ url_for('upload_file') }}" method="POST" enctype="multipart/form-data">
+                <div class="file-upload">
+                    <label for="file" class="file-upload-label">
+                        <i class="fas fa-upload"></i>
+                        <span class="file-upload-text">Seleccionar Archivo</span>
+                    </label>
+                    <input type="file" id="file" name="file" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Subir</button>
+            </form>
         </div>
     </main>
 
     <footer class="footer">
-        <p>&copy;. Todos los derechos reservados.</p>
+        <p>&copy; Todos los derechos reservados.</p>
     </footer>
+
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </body>
 </html>
