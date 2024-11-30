@@ -19,7 +19,7 @@
             </ul>
         </nav>
     </header>
-    <div class="register-container">
+    <div class="contenedor-app">
         <h2>Crear Cuenta</h2>
         <form action="{{ url_for('register') }}" method="POST">
             <div class="form-group">
@@ -38,15 +38,6 @@
                 <button type="submit">Registrarse</button>
             </div>
         </form>
-        <div class="messages">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-        </div>
         <p>¿Ya tienes una cuenta? <a href="{{ url_for('login') }}">Inicia sesión aquí</a>.</p>
     </div>
     <!-- Pie de página -->
