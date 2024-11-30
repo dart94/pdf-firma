@@ -162,6 +162,46 @@ html,body {
 }
 
 
+/* Estilo para el botón submit */
+button[type="submit"] {
+    background-color: var(--rojo-nissan); /* Color de fondo */
+    color: var(--blanco); /* Color del texto */
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;
+    font-size: 1rem;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    letter-spacing: 1px;
+}
+
+/* Efecto hover para el botón submit */
+button[type="submit"]:hover {
+    background-color: #d93f3f; 
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); 
+    transform: translateY(-2px); 
+}
+
+/* Efecto active para el botón submit */
+button[type="submit"]:active {
+    transform: scale(0.98); 
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1); 
+}
+
+/* Estilo al deshabilitar el botón */
+button[type="submit"]:disabled {
+    background-color: #cccccc; 
+    color: #666666; 
+    cursor: not-allowed; 
+    box-shadow: none; 
+}
+
 /* Estilo de los inputs */
 input {
     width: 100%;
