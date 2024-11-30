@@ -115,7 +115,7 @@ if (pdfCanvas) {
     // Usa PDF.js para cargar y renderizar el PDF
     pdfjsLib.getDocument(url).promise.then(function(pdf) {
         pdf.getPage(1).then(function(page) {
-            const viewport = page.getViewport({ scale: 1 });
+            const viewport = page.getViewport({ scale: 1.5 }); // Ajustar el escalado según el tamaño deseado
             pdfCanvas.height = viewport.height;
             pdfCanvas.width = viewport.width;
 
@@ -136,11 +136,3 @@ function copyUrl() {
         alert('¡Enlace copiado al portapapeles!');
     });
 }
-
-document.querySelector('form').addEventListener('submit', function(event) {
-    const fileInput = document.getElementById('file');
-    if (!fileInput.value) {
-        alert('Por favor, selecciona un archivo antes de subirlo.');
-        event.preventDefault();
-    }
-});

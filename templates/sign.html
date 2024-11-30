@@ -17,9 +17,9 @@
 
     <!-- Contenido principal -->
     <main class="contenedor-app">
-        <!-- Previsualización del PDF o imagnn -->
+        <!-- Previsualización del PDF -->
         <section class="app">
-            <img src="{{ url_for('static', filename='img/contrato.png') }}" alt="Previsualización del PDF">
+            <canvas id="pdf-canvas" data-url="{{ url_for('uploaded_file', filename=filename) }}"></canvas>
         </section>
 
         <!-- Título -->
@@ -42,7 +42,7 @@
 
     <!-- Pie de página -->
     <footer class="footer">
-        <p>&copy;Todos los derechos reservados.</p>
+        <p>&copy; Todos los derechos reservados.</p>
     </footer>
 
     <!-- Scripts -->
