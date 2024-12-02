@@ -83,11 +83,11 @@ html,body {
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
-.app img {
-    max-width: 100%; /* La imagen nunca excederá el ancho del contenedor */
-    height: auto; /* Mantiene la proporción de la imagen */
-    display: block; /* Quita cualquier espacio adicional causado por inline elements */
-    border-radius: 8px; /* Opcional, para esquinas redondeadas */
+.app canvas {
+    max-width: 100%; 
+    height: auto; 
+    display: block; 
+    border-radius: 8px; 
 }
 
 .imagen {

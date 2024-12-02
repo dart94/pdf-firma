@@ -163,6 +163,11 @@ def upload_file():
     if file.filename == "":
         return "No se seleccionó ningún archivo", 400
     
+    
+    # Validar tipo de archivo
+    if not file.content_type == "application/pdf":
+        return "Solo se permiten archivos PDF", 400
+    
     filename = secure_filename(file.filename)
     filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
     file.save(filepath)
