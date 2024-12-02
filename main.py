@@ -264,6 +264,16 @@ def download_signed_pdf(request_id):
         mimetype="application/pdf"
     )
 
+@app.route('/uploads/<filename>')
+@login_required
+def uploaded_file(filename):
+    # Asegúrate de que el archivo existe y está en el directorio de uploads
+    filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+    if not os.path.isfile(filepath):
+        return "Archivo no encontrado", 404
+    
+    return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
+
 # Inicialización de la base de datos
 with app.app_context():
     db.create_all()
