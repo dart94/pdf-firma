@@ -1,7 +1,7 @@
 import os
 import uuid
 from datetime import datetime, timedelta, timezone
-from flask import Flask, render_template, request, redirect, url_for, send_file, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, send_file, send_from_directory, jsonify
 from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin
 from werkzeug.utils import secure_filename
 from PIL import Image
@@ -15,7 +15,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask import flash
-
+from pypdf import PdfWriter, PdfReader
 
 # Inicialización de la aplicación
 app = Flask(__name__)
@@ -278,6 +278,45 @@ def uploaded_file(filename):
         return "Archivo no encontrado", 404
     
     return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
+
+@app.route('/save_signature_position', methods=['POST'])
+def save_signature_position():
+    data = request.json
+    # Datos de la posición y tamaño
+    x = data['x']
+    y = data['y']
+    width = data['width']
+    height = data['height']
+    canvas_width = data['canvasWidth']
+    canvas_height = data['canvasHeight']
+
+    # Escalar a coordenadas del PDF (en puntos)
+    pdf_width = 595.28  # Ancho del PDF (A4 estándar, 72 DPI)
+    pdf_height = 841.89  # Alto del PDF
+    scaled_x = (x / canvas_width) * pdf_width
+    scaled_y = pdf_height - ((y / canvas_height) * pdf_height)  # Invertir eje Y
+    scaled_width = (width / canvas_width) * pdf_width
+    scaled_height = (height / canvas_height) * pdf_height
+
+    # Aquí puedes guardar las coordenadas en tu base de datos o usarlas directamente
+    return jsonify({'message': 'Coordenadas guardadas', 'scaled_x': scaled_x, 'scaled_y': scaled_y})
+
+def embed_signature(pdf_path, signature_path, x, y, width, height, output_path):
+    reader = PdfReader(pdf_path)
+    writer = PdfWriter()
+    packet = BytesIO()
+    can = canvas.Canvas(packet, pagesize=(595.28, 841.89))  # Tamaño A4
+    can.drawImage(signature_path, x, y, width, height)
+    can.save()
+    packet.seek(0)
+    signature_page = PdfReader(packet)
+
+    for page in reader.pages:
+        page.merge_page(signature_page.pages[0])
+        writer.add_page(page)
+
+    with open(output_path, 'wb') as output_file:
+        writer.write(output_file)
 
 # Inicialización de la base de datos
 with app.app_context():

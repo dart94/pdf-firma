@@ -136,3 +136,67 @@ function copyUrl() {
         alert('¡Enlace copiado al portapapeles!');
     });
 }
+
+
+const signatureBox = document.getElementById('signature-box');
+let isDragging = false;
+let offsetX, offsetY;
+
+// Mover la firma
+signatureBox.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    offsetX = e.offsetX;
+    offsetY = e.offsetY;
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+        const x = e.clientX - offsetX;
+        const y = e.clientY - offsetY;
+        signatureBox.style.left = `${x}px`;
+        signatureBox.style.top = `${y}px`;
+    }
+});
+
+document.addEventListener('mouseup', () => {
+    isDragging = false;
+});
+
+// Cambiar tamaño con doble clic
+signatureBox.addEventListener('dblclick', () => {
+    const newWidth = prompt('Ingresa el nuevo ancho en px:', signatureBox.offsetWidth);
+    const newHeight = prompt('Ingresa el nuevo alto en px:', signatureBox.offsetHeight);
+    if (newWidth && newHeight) {
+        signatureBox.style.width = `${newWidth}px`;
+        signatureBox.style.height = `${newHeight}px`;
+    }
+});
+
+// Guardar posición y tamaño
+document.querySelector('form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const pdfCanvas = document.getElementById('pdf-canvas');
+
+    // Datos de la firma
+    const data = {
+        x: signatureBox.offsetLeft,
+        y: signatureBox.offsetTop,
+        width: signatureBox.offsetWidth,
+        height: signatureBox.offsetHeight,
+        canvasWidth: pdfCanvas.offsetWidth,
+        canvasHeight: pdfCanvas.offsetHeight,
+    };
+
+    // Enviar datos al backend
+    fetch('/save_signature_position', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    }).then(response => {
+        if (response.ok) {
+            alert('Posición de la firma guardada');
+        } else {
+            alert('Error al guardar posición');
+        }
+    });
+});
