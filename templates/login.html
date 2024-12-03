@@ -35,13 +35,6 @@
                 <button type="submit">Ingresar</button>
             </div>
         </form>
-        {% if get_flashed_messages() %}
-            <div class="messages">
-                {% for message in get_flashed_messages() %}
-                    <p>{{ message }}</p>
-                {% endfor %}
-            </div>
-        {% endif %}
         <p>¿No tienes una cuenta? <a href="{{ url_for('register') }}">Regístrate aquí</a>.</p>
     </div>
     <!-- Pie de página -->

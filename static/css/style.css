@@ -332,7 +332,7 @@ form button:active {
     }
 
     .styled-table td::before {
-        content: attr(data-label);
+        content: none;
         position: absolute;
         left: 6px;
         width: 45%;
