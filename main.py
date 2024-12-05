@@ -16,21 +16,34 @@ from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask import flash
 
-
-# Inicialización de la aplicación
+# Configuración de la aplicación
 app = Flask(__name__)
 
-# Configuración
+# Configuración de carpetas de carga
 UPLOAD_FOLDER = "uploads"
 SIGNED_FOLDER = "signed"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(SIGNED_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["SIGNED_FOLDER"] = SIGNED_FOLDER
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/db")
+
+# Configuración de base de datos con manejo de codificación
+app.config["SQLALCHEMY_DATABASE_URI"] = (
+    "postgresql://postgres:POjljzcMvxYzwJNaYATCktXBPUNZpQFA@"
+    "junction.proxy.rlwy.net:11932/railway"
+)
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    'connect_args': {
+        'client_encoding': 'utf8'
+    }
+}
 app.config["SECRET_KEY"] = os.urandom(24)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# Puerto de la aplicación
 port = int(os.environ.get('PORT', 5000))
+
+
 
 # Inicialización de extensiones
 db = SQLAlchemy(app)
