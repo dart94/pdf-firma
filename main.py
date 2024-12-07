@@ -282,6 +282,24 @@ def download_signed_pdf(request_id):
         mimetype="application/pdf"
     )
 
+#Ruta para eliminar pdf de la base de datos
+@app.route('/delete/<request_id>', methods=['POST'])
+@login_required
+def delete_signed_pdf(request_id):
+    signature_request = SignatureRequest.query.get_or_404(request_id)
+
+    # Verificar si el PDF está firmado
+    if not signature_request.is_signed or not signature_request.signed_pdf:
+        return "El PDF no está firmado o no existe.", 404
+
+    # Eliminar el PDF de la base de datos
+    signature_request.signed_pdf = None
+    signature_request.is_signed = False  # Si quieres también actualizar el estado
+    db.session.commit()
+
+    # Redirigir a la lista de documentos firmados
+    return redirect(url_for('signed_documents'))
+
 @app.route('/uploads/<filename>')
 @login_required
 def uploaded_file(filename):

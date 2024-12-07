@@ -47,6 +47,17 @@
                         </svg>
                         Descargar
                     </a>
+                    <form action="{{ url_for('delete_signed_pdf', request_id=request.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="delete-btn" aria-label="Eliminar {{ request.filename }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="delete-icon">
+                                <path d="M3 6h18"></path>
+                                <path d="M10 11v6"></path>
+                                <path d="M14 11v6"></path>
+                                <path d="M17 6V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2"></path>
+                            </svg>
+                            Eliminar
+                        </button>
+                    </form>
                 </td>
             </tr>
             {% endfor %}
