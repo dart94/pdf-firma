@@ -15,6 +15,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask import flash
+from dotenv import load_dotenv
 
 # Configuración de la aplicación
 app = Flask(__name__)
@@ -27,11 +28,17 @@ os.makedirs(SIGNED_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["SIGNED_FOLDER"] = SIGNED_FOLDER
 
+load_dotenv()
+DB_HOST = os.getenv('DB_HOST')
+DB_PORT = os.getenv('DB_PORT')
+DB_NAME = os.getenv('DB_NAME')
+DB_USER = os.getenv('DB_USER')
+DB_PASS = os.getenv('DB_PASS')
+
+DB_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
 # Configuración de base de datos con manejo de codificación
-app.config["SQLALCHEMY_DATABASE_URI"] = (
-    "postgresql://postgres:POjljzcMvxYzwJNaYATCktXBPUNZpQFA@"
-    "junction.proxy.rlwy.net:11932/railway"
-)
+app.config["SQLALCHEMY_DATABASE_URI"] = DB_URL
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     'connect_args': {
         'client_encoding': 'utf8'
