@@ -30,22 +30,19 @@ app.config["SIGNED_FOLDER"] = SIGNED_FOLDER
 
 load_dotenv()
 DB_HOST = os.getenv('DB_HOST')
-DB_PORT = os.getenv('DB_PORT')
+DB_PORT = os.getenv('DB_PORT', 3306)  # Puerto predeterminado de MySQL
 DB_NAME = os.getenv('DB_NAME')
 DB_USER = os.getenv('DB_USER')
 DB_PASS = os.getenv('DB_PASS')
 
-DB_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+# Configuración de la base de datos
+DB_URL = f"mysql+pymysql://{DB_USER}@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4"
 
-# Configuración de base de datos con manejo de codificación
+# Configuración de la aplicación Flask
 app.config["SQLALCHEMY_DATABASE_URI"] = DB_URL
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    'connect_args': {
-        'client_encoding': 'utf8'
-    }
-}
 app.config["SECRET_KEY"] = os.urandom(24)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
 
 # Puerto de la aplicación
 port = int(os.environ.get('PORT', 5000))
@@ -61,14 +58,15 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Modelo de la tabla de usuarios
+# Modelos de la base de datos
 class User(db.Model, UserMixin):
+    __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
 
-# Modelo de la tabla de firmas
 class SignatureRequest(db.Model):
+    __tablename__ = "signature_requests"
     id = db.Column(db.String(36), primary_key=True)
     filename = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc))
@@ -78,7 +76,6 @@ class SignatureRequest(db.Model):
     
     def is_expired(self):
         return datetime.now(timezone.utc) > self.expires_at
-
 # Función para crear la imagen de la firma
 def create_signature_image(signature_data):
     try:
