@@ -1,47 +1,113 @@
 {% extends "layout.html" %}
 {% block body %}
     <div class="container">
-    <h1>Lista de Documentos Firmados</h1>
-    </div>
-    <table class="styled-table" aria-label="Lista de archivos firmados">
-        <thead>
-            <tr>
-                <th scope="col">Nombre del Archivo</th>
-                <th scope="col">Acción</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for request in signed_requests %}
-            <tr>
-                <td data-label="Nombre del Archivo">
-                    <span class="filename-icon">📄</span>
-                    {{ request.filename }}
-                </td>
-                <td data-label="Acción">
-                    <a href="{{ url_for('download_signed_pdf', request_id=request.id) }}" 
-                       class="download-btn" 
-                       aria-label="Descargar {{ request.filename }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="download-icon">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        Descargar
-                    </a>
-                    <form action="{{ url_for('delete_signed_pdf', request_id=request.id) }}" method="POST" style="display:inline;">
-                        <button type="submit" class="delete-btn" aria-label="Eliminar {{ request.filename }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="delete-icon">
-                                <path d="M3 6h18"></path>
-                                <path d="M10 11v6"></path>
-                                <path d="M14 11v6"></path>
-                                <path d="M17 6V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2"></path>
+        <h1>Documentos Subidos</h1>
+
+        <!-- Documentos No Firmados -->
+        <h2>Documentos Pendientes de Firma</h2>
+        <table class="styled-table" aria-label="Lista de archivos no firmados">
+            <thead>
+                <tr>
+                    <th scope="col">Nombre del Archivo</th>
+                    <th scope="col">Creación</th>
+                    <th scope="col">Expira</th>
+                    <th scope="col">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in unsigned_requests %}
+                <tr>
+                    <td data-label="Nombre del Archivo">
+                        <span class="filename-icon">📄</span>
+                        {{ request.filename }}
+                    </td>
+                    <td data-label="Creación">
+                        <span class="filename-icon">📄</span>
+                        {{ request.created_at.strftime("%d-%B-%Y a las %H:%M") }}
+                    </td>
+                    <td data-label="Expira">
+                        <span class="filename-icon">📄</span>
+                        {{ request.expires_at.strftime("%d-%B-%Y a las %H:%M") }}
+                    </td>
+                    <td data-label="Acción">
+                        <form action="{{ url_for('sign_document', request_id=request.id) }}" method="GET" style="display:inline;">
+                            <button type="submit" class="sign-btn" aria-label="Firmar {{ request.filename }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="sign-icon">
+                                    <path d="M12 4v12"></path>
+                                    <polyline points="8 10 12 14 16 10"></polyline>
+                                </svg>
+                                Firmar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="2">No tienes documentos pendientes de firma.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Documentos Firmados -->
+        <h2>Documentos Firmados</h2>
+        <table class="styled-table" aria-label="Lista de archivos firmados">
+            <thead>
+                <tr>
+                    <th scope="col">Nombre del Archivo</th>
+                    <th scope="col">Creación</th>
+                    <th scope="col">Firmado</th>
+                    <th scope="col">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in signed_requests %}
+                <tr>
+                    <td data-label="Nombre del Archivo">
+                        <span class="filename-icon">📄</span>
+                        {{ request.filename }}
+                    </td>
+                    <td data-label="Creación">
+                        <span class="filename-icon">📄</span>
+                        {{ request.created_at.strftime("%d-%B-%Y a las %H:%M") }}
+                    </td>
+                    <td data-label="Firmado el">
+                        {% if request.signed_at %}
+                            {{ request.signed_at.strftime("%d-%B-%Y a las %H:%M") }}
+                        {% else %}
+                            No firmado
+                        {% endif %}
+                    </td>
+                    <td data-label="Acción">
+                        <a href="{{ url_for('download_signed_pdf', request_id=request.id) }}" 
+                           class="download-btn" 
+                           aria-label="Descargar {{ request.filename }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="download-icon">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
                             </svg>
-                            Eliminar
-                        </button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                            Descargar
+                        </a>
+                        <form action="{{ url_for('delete_signed_pdf', request_id=request.id) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="delete-btn" aria-label="Eliminar {{ request.filename }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="delete-icon">
+                                    <path d="M3 6h18"></path>
+                                    <path d="M10 11v6"></path>
+                                    <path d="M14 11v6"></path>
+                                    <path d="M17 6V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2"></path>
+                                </svg>
+                                Eliminar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="2">No tienes documentos firmados aún.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% endblock %}

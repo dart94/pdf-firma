@@ -11,11 +11,33 @@
                         <i class="fas fa-upload"></i>
                         <span class="file-upload-text">Seleccionar Archivo</span>
                     </label>
-                    <input type="file" id="file" name="file" accept=".pdf" required>
+                    <input type="file" id="file" name="file" accept=".pdf" required onchange="handleFileChange(event)">
                 </div>
-                <button type="submit" class="btn btn-primary">Subir</button>
+
+                <!-- Vista previa del archivo seleccionado -->
+                <div id="file-preview" style="display: none; margin-top: 20px; text-align: center;">
+                    Archivo seleccionado <p id="file-name" style="margin-top: 10px;"></p>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Firmar</button>
             </form>
         </div>
     </main>
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script>
+        function handleFileChange(event) {
+            const fileInput = event.target;
+            const file = fileInput.files[0];
+            const previewContainer = document.getElementById('file-preview');
+            const fileNameElement = document.getElementById('file-name');
+
+            if (file) {
+                // Muestra la vista previa del archivo
+                fileNameElement.textContent = file.name;
+                previewContainer.style.display = 'block';
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        }
+    </script>
 {% endblock %}

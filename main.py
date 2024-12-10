@@ -1,7 +1,7 @@
 import os
 import uuid
 from datetime import datetime, timedelta, timezone
-from flask import Flask, render_template, request, redirect, url_for, send_file, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, send_file, send_from_directory, session
 from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin
 from werkzeug.utils import secure_filename
 from io import BytesIO
@@ -11,6 +11,8 @@ from flask_bcrypt import Bcrypt
 from flask import flash
 from dotenv import load_dotenv
 from functions import create_signature_image, add_signature_to_pdf
+from flask_login import current_user
+
 
 # Configuración de la aplicación
 app = Flask(__name__)
@@ -58,21 +60,40 @@ login_manager.login_view = 'login'
 
 # Modelo de la tabla de usuarios
 class User(db.Model, UserMixin):
+    __tablename__ = "users"  # Define explícitamente el nombre de la tabla
+
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
+    role = db.Column(db.String(20), nullable=False, default="cliente")  # admin o cliente
+
+    # Representación para depuración
+    def __repr__(self):
+        return f"<User {self.id}: {self.username} ({self.role})>"
 
 # Modelo de la tabla de firmas
 class SignatureRequest(db.Model):
-    id = db.Column(db.String(36), primary_key=True)
-    filename = db.Column(db.String(255), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc))
-    expires_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc) + timedelta(days=7))
-    is_signed = db.Column(db.Boolean, default=False)
-    signed_pdf = db.Column(db.LargeBinary, nullable=True)
-    
+    __tablename__ = 'signature_request'
+
+    id = db.Column(db.String(36), primary_key=True)  # UUID como ID
+    filename = db.Column(db.String(255), nullable=False)  # Nombre del archivo
+    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))  # Fecha de creación
+    expires_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc) + timedelta(days=7))  # Fecha de expiración
+    is_signed = db.Column(db.Boolean, default=False, nullable=False)  # Estado de la firma
+    signed_pdf = db.Column(db.LargeBinary, nullable=True)  # PDF firmado en formato binario
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # Relación con la tabla users
+    signed_at = db.Column(db.DateTime, nullable=True)  # Nueva columna
+
+    # Relación para acceso al usuario
+    user = db.relationship('User', backref='signature_requests', lazy=True)
+
+    # Método para verificar si la solicitud está expirada
     def is_expired(self):
         return datetime.now(timezone.utc) > self.expires_at
+
+    # Representación para depuración
+    def __repr__(self):
+        return f"<SignatureRequest {self.id}: {self.filename} (Signed: {self.is_signed})>"
 
 # Rutas de la aplicación
 @login_manager.user_loader
@@ -81,16 +102,25 @@ def load_user(user_id):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))  # Redirige a la página principal si ya inició sesión
+    
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+
+        # Consulta la tabla "users" usando el modelo User
         user = User.query.filter_by(username=username).first()
 
         if user and bcrypt.check_password_hash(user.password, password):
             login_user(user)
+            session['username'] = user.username
+            session['role'] = user.role
+            flash(f"Inicio de sesión exitoso como {user.role}", "success")
             return redirect(url_for('index'))
         else:
-            return "Credenciales inválidas", 401
+            flash("Credenciales inválidas", "danger")
+            return render_template('login.html')
 
     return render_template('login.html')
 
@@ -98,6 +128,8 @@ def login():
 @login_required
 def logout():
     logout_user()
+    session.clear()
+    flash("Has cerrado sesión correctamente", "success")
     return redirect(url_for('login'))
 
 @app.route('/')
@@ -108,12 +140,24 @@ def index():
 @app.route('/firmados')
 @login_required
 def list_signed_documents():
-    # Obtener todas las solicitudes que han sido firmadas
-    signed_requests = SignatureRequest.query.filter_by(is_signed=True).all()
+    # Documentos firmados por el usuario actual
+    signed_requests = SignatureRequest.query.filter_by(
+        is_signed=True, 
+        user_id=current_user.id
+    ).all()
 
-    # Renderizar una plantilla con la lista de documentos
-    return render_template('firmados.html', signed_requests=signed_requests)
+    # Documentos no firmados por el usuario actual
+    unsigned_requests = SignatureRequest.query.filter_by(
+        is_signed=False, 
+        user_id=current_user.id
+    ).all()
 
+    # Renderizar la plantilla con ambas listas
+    return render_template(
+        'firmados.html',
+        signed_requests=signed_requests,
+        unsigned_requests=unsigned_requests
+    )
 @app.route('/upload', methods=['POST'])
 @login_required
 def upload_file():
@@ -133,11 +177,14 @@ def upload_file():
     filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
     file.save(filepath)
     
+    user_id = current_user.id
+
     request_id = str(uuid.uuid4())
     signature_request = SignatureRequest(
         id=request_id,
         filename=filename,
-        expires_at=datetime.now(timezone.utc) + timedelta(days=7)
+        expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+        user_id=user_id
     )
     
     db.session.add(signature_request)
@@ -148,10 +195,8 @@ def upload_file():
 
 @app.route('/sign/<request_id>', methods=['GET', 'POST'])
 def sign_document(request_id):
-    # Buscar la solicitud de firma
     signature_request = SignatureRequest.query.get_or_404(request_id)
 
-    # Verificar si la solicitud ha expirado
     if signature_request.expires_at.tzinfo is None:
         expires_at_aware = signature_request.expires_at.replace(tzinfo=timezone.utc)
     else:
@@ -176,8 +221,10 @@ def sign_document(request_id):
         
         # Actualizar la base de datos con el PDF firmado
         signature_request.is_signed = True
+        signature_request.signed_at = datetime.now()
         signature_request.signed_pdf = signed_pdf_binary
         db.session.commit()
+        flash("Documento firmado correctamente.", "success")
         
         return render_template('signed.html')
 
@@ -246,7 +293,7 @@ def delete_signed_pdf(request_id):
     db.session.commit()
 
     # Redirigir a la lista de documentos firmados
-    return redirect(url_for('signed_documents'))
+    return redirect(url_for('firmados'))
 
 @app.route('/uploads/<filename>')
 @login_required

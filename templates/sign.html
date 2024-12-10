@@ -1,30 +1,43 @@
-{% extends "layout.html" %}
-{% block body %}
-    <!-- Contenido principal -->
-    <main class="contenedor-app">
-        <!-- Previsualización del PDF -->
-        <section class="app">
-            <canvas id="pdf-canvas" data-url="{{ url_for('uploaded_file', filename=filename) }}"></canvas>
-        </section>
+<!DOCTYPE html>
+<html lang="en">
 
-        <!-- Título -->
-        <h1>Firma tu carta de aceptación</h1>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Firma</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<!-- Contenido principal -->
+<main class="contenedor-app">
+    <!-- Previsualización del PDF -->
+    <section class="app">
+        <canvas id="pdf-canvas" data-url="{{ url_for('uploaded_file', filename=filename) }}"></canvas>
+    </section>
 
-        <!-- Canvas para la firma -->
-        <section class="contenedor-canvas">
-            <canvas id="signature-pad" class="canvas"></canvas>
-        </section>
+    <!-- Título -->
+    <h1>Firma tu carta de aceptación</h1>
 
-        <!-- Formulario para enviar la firma -->
-        <form method="POST">
-            <input type="hidden" name="signature" id="signature">
-            <div class="botones">
-                <button type="button" class="btn btn-secondary" onclick="clearCanvas()">Borrar</button>
-                <button type="submit" class="btn btn-primary" onclick="saveSignature()">Guardar Firma</button>
-            </div>
-        </form>
-    </main>
-    <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
-    <script src="{{ url_for('static', filename='js/signature.js') }}"></script>
-{% endblock %}
+    <!-- Canvas para la firma -->
+    <section class="contenedor-canvas">
+        <canvas id="signature-pad" class="canvas"></canvas>
+    </section>
+
+    <!-- Formulario para enviar la firma -->
+    <form method="POST">
+        <input type="hidden" name="signature" id="signature">
+        <div class="botones">
+            <button type="button" class="btn btn-secondary" onclick="clearCanvas()">Borrar</button>
+            <button type="submit" class="btn btn-primary" onclick="saveSignature()">Guardar Firma</button>
+        </div>
+    </form>
+</main>
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+<script src="{{ url_for('static', filename='js/signature.js') }}"></script>
+<footer class="footer">
+    <p>&copy;Todos los derechos reservados.</p>
+</footer>
+<script src="{{ url_for('static', filename='js/signature.js') }}"></script>
+</body>
+
+</html>
