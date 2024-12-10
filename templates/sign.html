@@ -1,20 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firmar PDF</title>
-    <!-- Estilos -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-    <!-- Encabezado -->
-    <header class="header">
-        <div class="logo">
-            <img src="{{ url_for('static', filename='img/logo-ai.png') }}" alt="Logo">
-        </div>
-    </header>
-
+{% extends "layout.html" %}
+{% block body %}
     <!-- Contenido principal -->
     <main class="contenedor-app">
         <!-- Previsualización del PDF -->
@@ -39,14 +24,7 @@
             </div>
         </form>
     </main>
-
-    <!-- Pie de página -->
-    <footer class="footer">
-        <p>&copy; Todos los derechos reservados.</p>
-    </footer>
-
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
     <script src="{{ url_for('static', filename='js/signature.js') }}"></script>
-</body>
-</html>
+{% endblock %}

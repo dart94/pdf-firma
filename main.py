@@ -4,18 +4,13 @@ from datetime import datetime, timedelta, timezone
 from flask import Flask, render_template, request, redirect, url_for, send_file, send_from_directory
 from flask_login import LoginManager, login_user, login_required, logout_user, UserMixin
 from werkzeug.utils import secure_filename
-from PIL import Image
 from io import BytesIO
-import tempfile
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
-from base64 import b64decode
-import pypdf
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask import flash
 from dotenv import load_dotenv
+from functions import create_signature_image, add_signature_to_pdf
 
 # Configuración de la aplicación
 app = Flask(__name__)
@@ -78,60 +73,6 @@ class SignatureRequest(db.Model):
     
     def is_expired(self):
         return datetime.now(timezone.utc) > self.expires_at
-
-# Función para crear la imagen de la firma
-def create_signature_image(signature_data):
-    try:
-        signature_bytes = b64decode(signature_data.split(",")[1])
-        signature_image = Image.open(BytesIO(signature_bytes))
-        signature_image = signature_image.convert("RGBA")
-        data = signature_image.getdata()
-
-        new_data = [
-            (255, 255, 255, 0) if item[:3] == (255, 255, 255) else item
-            for item in data
-        ]
-        signature_image.putdata(new_data)
-
-        image_stream = BytesIO()
-        signature_image.save(image_stream, format="PNG")
-        image_stream.seek(0)
-        return image_stream
-    except Exception as e:
-        raise ValueError("Error al procesar la imagen de la firma.") from e
-
-# Función para agregar la firma al PDF
-def add_signature_to_pdf(pdf_path, signature_image_stream):
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as temp_signature_file:
-        temp_signature_file.write(signature_image_stream.getvalue())
-        temp_signature_path = temp_signature_file.name
-
-    packet = BytesIO()
-    c = canvas.Canvas(packet, pagesize=letter)
-    c.drawImage(temp_signature_path, 170, 150, width=150, height=30)
-    c.save()
-    packet.seek(0)
-
-    pdf_reader = pypdf.PdfReader(pdf_path)
-    signature_pdf = pypdf.PdfReader(packet)
-    pdf_writer = pypdf.PdfWriter()
-
-    original_page = pdf_reader.pages[0]
-    signature_page = signature_pdf.pages[0]
-    combined_page = pypdf.PageObject.create_blank_page(width=letter[0], height=letter[1])
-    combined_page.merge_page(original_page)
-    combined_page.merge_page(signature_page)
-    pdf_writer.add_page(combined_page)
-
-    for page in pdf_reader.pages[1:]:
-        pdf_writer.add_page(page)
-
-    output_stream = BytesIO()
-    pdf_writer.write(output_stream)
-    output_stream.seek(0)
-
-    os.unlink(temp_signature_path)
-    return output_stream.getvalue()
 
 # Rutas de la aplicación
 @login_manager.user_loader
